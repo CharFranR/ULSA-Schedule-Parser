@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ulsa_schedule"
+version = "1.0.0"
+dependencies = [
+  "beautifulsoup4",
+  "Pillow",
+]
+
+[project.optional-dependencies]
+pdf = ["reportlab"]
+
+[project.scripts]
+ulsa-schedule = "ulsa_schedule.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+packages = [
+  "ulsa_schedule",
+  "ulsa_schedule.adapters",
+  "ulsa_schedule.domain",
+  "ulsa_schedule.use_cases",
+]
+
+[tool.setuptools.package-data]
+"ulsa_schedule" = ["assets/fonts/*.ttf", "assets/fonts/*.LICENSE"]
