@@ -39,7 +39,7 @@ pip install ulsa_schedule[pdf]
 From source:
 
 ```bash
-git clone https://github.com/frandev/ULSA-Schedule-Parser.git
+git clone https://github.com/CharFranR/ULSA-Schedule-Parser.git
 cd ULSA-Schedule-Parser
 pip install .
 ```
@@ -155,7 +155,7 @@ Clean Architecture: domain has zero dependencies on adapters. Swap renderers, ad
 
 ```bash
 # Clone and install dev dependencies
-git clone https://github.com/frandev/ULSA-Schedule-Parser.git
+git clone https://github.com/CharFranR/ULSA-Schedule-Parser.git
 cd ULSA-Schedule-Parser
 pip install -e ".[pdf]"
 
