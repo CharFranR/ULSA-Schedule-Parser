@@ -27,13 +27,13 @@ PNG / SVG / PDF
 ### Install
 
 ```bash
-pip install ulsa_schedule
+pip install ulsa-schedule-parser
 ```
 
 For PDF support:
 
 ```bash
-pip install ulsa_schedule[pdf]
+pip install ulsa-schedule-parser[pdf]
 ```
 
 From source:
@@ -71,7 +71,7 @@ That's it. No config, no setup, no dependencies to wrestle with.
 |--------|------|----------|----------|
 | PNG | (default) | Pillow | Sharing, social media, quick view |
 | SVG | `--svg` | (none) | Web, scalable prints, editing |
-| PDF | `--pdf` | `ulsa_schedule[pdf]` | Printing, formal documents |
+| PDF | `--pdf` | `ulsa-schedule-parser[pdf]` | Printing, formal documents |
 
 ## How It Works
 
