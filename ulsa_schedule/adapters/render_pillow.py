@@ -8,7 +8,7 @@ from importlib import resources
 
 from PIL import Image, ImageDraw, ImageFont
 
-from ..domain.model import CellRender, ScheduleView
+from ..domain.model import CellRender, Day, ScheduleView
 
 
 @dataclass(frozen=True)
@@ -18,6 +18,19 @@ class PillowScheduleRenderer:
     supersample: int = 2
 
     BUNDLED_FONT = "assets/fonts/DejaVuSans.ttf"
+
+    # Color palette per day (pastel colors)
+    DAY_COLORS: dict[Day, str] = None
+
+    def __post_init__(self):
+        object.__setattr__(self, 'DAY_COLORS', {
+            Day.MON: "#E8F4FD",  # light blue
+            Day.TUE: "#FFF3E0",  # light orange
+            Day.WED: "#E8F5E9",  # light green
+            Day.THU: "#F3E5F5",  # light purple
+            Day.FRI: "#FFF8E1",  # light yellow
+            Day.SAT: "#FCE4EC",  # light pink
+        })
 
     def render(self, schedule: ScheduleView) -> bytes:
         scale = max(1, self.supersample)
@@ -56,7 +69,7 @@ class PillowScheduleRenderer:
         for col_index, day in enumerate(schedule.days):
             x0 = grid_left + col_index * cell_width
             x1 = x0 + cell_width
-            draw.rectangle([x0, margin, x1, margin + header_height], outline="black")
+            draw.rectangle([x0, margin, x1, margin + header_height], fill="#2C3E50", outline="#BDC3C7")
             label = day.value
             self._draw_centered_text(
                 draw,
@@ -66,12 +79,13 @@ class PillowScheduleRenderer:
                 x1,
                 margin + header_height,
                 font_header,
+                fill="white",
             )
 
         for row_index, label in enumerate(schedule.time_labels):
             y0 = grid_top + row_index * cell_height
             y1 = y0 + cell_height
-            draw.rectangle([margin, y0, grid_left, y1], outline="black")
+            draw.rectangle([margin, y0, grid_left, y1], fill="#34495E", outline="#BDC3C7")
             self._draw_centered_text(
                 draw,
                 label,
@@ -80,17 +94,43 @@ class PillowScheduleRenderer:
                 grid_left,
                 y1,
                 font_time,
+                fill="white",
             )
 
         for row_index in range(rows):
             y0 = grid_top + row_index * cell_height
             y1 = y0 + cell_height
+            
+            # Check if this is a lunch row
+            is_lunch = row_index < len(schedule.is_lunch_row) and schedule.is_lunch_row[row_index]
+            
             for col_index in range(cols):
                 x0 = grid_left + col_index * cell_width
                 x1 = x0 + cell_width
-                draw.rectangle([x0, y0, x1, y1], outline="#666666")
+                draw.rectangle([x0, y0, x1, y1], outline="#BDC3C7")
+                day = schedule.days[col_index]
                 cell = schedule.grid[row_index][col_index]
-                self._render_cell(draw, cell, x0, y0, x1, y1, font_body, scale)
+                
+                # Pass lunch info to renderer
+                self._render_cell(draw, cell, day, is_lunch, x0, y0, x1, y1, font_body, scale)
+
+        # Draw "ALMUERZO" text centered across the full lunch row
+        for row_index in range(rows):
+            is_lunch = row_index < len(schedule.is_lunch_row) and schedule.is_lunch_row[row_index]
+            if is_lunch:
+                y0 = grid_top + row_index * cell_height
+                y1 = y0 + cell_height
+                self._draw_centered_text(
+                    draw,
+                    "ALMUERZO",
+                    grid_left,
+                    y0,
+                    grid_left + grid_width,
+                    y1,
+                    font_body,
+                    fill="#7F8C8D",
+                )
+                break
 
         if scale > 1:
             resampling = getattr(Image, "Resampling", Image)
@@ -105,6 +145,8 @@ class PillowScheduleRenderer:
         self,
         draw: ImageDraw.ImageDraw,
         cell: CellRender,
+        day: Day,
+        is_lunch: bool,
         x0: float,
         y0: float,
         x1: float,
@@ -113,14 +155,21 @@ class PillowScheduleRenderer:
         scale: int,
     ) -> None:
         mid_y = y0 + (y1 - y0) / 2
+        
+        # Draw lunch row background if this is a lunch row
+        if is_lunch:
+            draw.rectangle([x0, y0, x1, y1], fill="#F5F5F5")
+            return
+        
+        color = self.DAY_COLORS.get(day, "#DDEBFF")
         if self._events_equivalent(cell.top, cell.bottom):
-            self._draw_block(draw, cell.top, x0, y0, x1, y1, font, scale)
+            self._draw_block(draw, cell.top, color, x0, y0, x1, y1, font, scale)
             if cell.conflict_top or cell.conflict_bottom:
                 self._draw_conflict(draw, x0, y0, x1, y1)
             return
 
-        self._draw_half(draw, cell.top, x0, y0, x1, mid_y, font, scale)
-        self._draw_half(draw, cell.bottom, x0, mid_y, x1, y1, font, scale)
+        self._draw_half(draw, cell.top, color, x0, y0, x1, mid_y, font, scale)
+        self._draw_half(draw, cell.bottom, color, x0, mid_y, x1, y1, font, scale)
         if cell.conflict_top:
             self._draw_conflict(draw, x0, y0, x1, mid_y)
         if cell.conflict_bottom:
@@ -130,6 +179,7 @@ class PillowScheduleRenderer:
         self,
         draw: ImageDraw.ImageDraw,
         events: list,
+        color: str,
         x0: float,
         y0: float,
         x1: float,
@@ -139,12 +189,13 @@ class PillowScheduleRenderer:
     ) -> None:
         if not events:
             return
-        self._draw_block(draw, events, x0, y0, x1, y1, font, scale)
+        self._draw_block(draw, events, color, x0, y0, x1, y1, font, scale)
 
     def _draw_block(
         self,
         draw: ImageDraw.ImageDraw,
         events: list,
+        color: str,
         x0: float,
         y0: float,
         x1: float,
@@ -155,7 +206,7 @@ class PillowScheduleRenderer:
         if not events:
             return
         padding = 8 * scale
-        draw.rectangle([x0, y0, x1, y1], fill="#DDEBFF")
+        draw.rectangle([x0, y0, x1, y1], fill=color)
         max_width = max(1, x1 - x0 - padding * 2)
         max_height = max(1, y1 - y0 - padding * 2)
         lines = self._compose_event_lines(events, draw, font, max_width, max_height, scale)
@@ -167,7 +218,7 @@ class PillowScheduleRenderer:
         start_y = y0 + padding + max(0, (max_height - total_height) / 2)
         for index, line in enumerate(lines):
             y = start_y + index * (line_height + spacing)
-            draw.text((x0 + padding, y), line, fill="black", font=font)
+            draw.text((x0 + padding, y), line, fill="#2C3E50", font=font)
 
     def _draw_conflict(
         self,
@@ -220,15 +271,18 @@ class PillowScheduleRenderer:
         x1: float,
         y1: float,
         font: ImageFont.ImageFont,
+        fill: str = "black",
     ) -> None:
         bbox = draw.textbbox((0, 0), text, font=font)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
         x = x0 + (x1 - x0 - text_width) / 2
         y = y0 + (y1 - y0 - text_height) / 2
-        draw.text((x, y), text, fill="black", font=font)
+        draw.text((x, y), text, fill=fill, font=font)
 
     def _events_equivalent(self, top: list, bottom: list) -> bool:
+        if not top and not bottom:
+            return True
         if not top or not bottom:
             return False
         return self._event_signatures(top) == self._event_signatures(bottom)
