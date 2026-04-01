@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0,<69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ulsa_schedule"
+name = "ulsa-schedule-parser"
 version = "1.0.0"
 description = "Convert ULSA enrollment HTML into beautiful schedule images (PNG, SVG, PDF)"
 requires-python = ">=3.10"
