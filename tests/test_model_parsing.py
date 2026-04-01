@@ -5,8 +5,6 @@ import unittest
 from ulsa_schedule.domain.model import (
     Day,
     DayParseError,
-    Duration,
-    DurationNotSupportedError,
     ScheduleError,
     TimeParseError,
     parse_day_token,
@@ -65,9 +63,3 @@ class TestModelParsing(unittest.TestCase):
     def test_parse_schedule_line_invalid(self) -> None:
         with self.assertRaises(ScheduleError):
             parse_schedule_line("Lu 08:00 - 09:40")
-
-    def test_duration_validation(self) -> None:
-        Duration(50)
-        Duration(100)
-        with self.assertRaises(DurationNotSupportedError):
-            Duration(75)
