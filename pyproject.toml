@@ -1,13 +1,13 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0,<69"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ulsa_schedule"
-version = "1.0.1"
+version = "1.0.0"
 description = "Convert ULSA enrollment HTML into beautiful schedule images (PNG, SVG, PDF)"
 requires-python = ">=3.10"
-license = "MIT"
+license = {text = "MIT"}
 readme = "README.md"
 keywords = ["schedule", "ulsa", "html", "parser", "png", "svg", "pdf"]
 dependencies = [
@@ -26,6 +26,8 @@ include-package-data = true
 packages = [
   "ulsa_schedule",
   "ulsa_schedule.adapters",
+  "ulsa_schedule.assets",
+  "ulsa_schedule.assets.fonts",
   "ulsa_schedule.domain",
   "ulsa_schedule.use_cases",
 ]
