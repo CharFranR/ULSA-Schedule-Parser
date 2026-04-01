@@ -62,17 +62,6 @@ class Time:
 
 
 @dataclass(frozen=True)
-class Duration:
-    minutes: int
-
-    def __post_init__(self) -> None:
-        if self.minutes not in (50, 100):
-            raise DurationNotSupportedError(
-                f"only 50/100 minute durations supported, got {self.minutes}"
-            )
-
-
-@dataclass(frozen=True)
 class Event:
     code: str
     subject: str
@@ -94,11 +83,6 @@ class Event:
             )
 
 
-@dataclass(frozen=True)
-class Schedule:
-    events: list[Event]
-
-
 @dataclass
 class CellRender:
     top: list[Event] = field(default_factory=list)
@@ -113,6 +97,7 @@ class ScheduleView:
     days: list[Day]
     time_labels: list[str]
     has_conflicts: bool
+    is_lunch_row: list[bool] = field(default_factory=list)
 
 
 _TIME_RE = re.compile(r"^(?P<hour>\d{1,2}):(?P<minute>\d{2})\s*(?P<ampm>am|pm)$", re.IGNORECASE)
@@ -172,7 +157,8 @@ def parse_schedule_line(value: str) -> tuple[Day, Time, Time, Optional[str]]:
 
 def ordered_days(events: Iterable[Event]) -> list[Day]:
     days = {event.day for event in events}
-    if days == {Day.SAT}:
-        return [Day.SAT]
     ordered = [Day.MON, Day.TUE, Day.WED, Day.THU, Day.FRI]
-    return [day for day in ordered if day in days]
+    result = [day for day in ordered if day in days]
+    if Day.SAT in days:
+        result.append(Day.SAT)
+    return result
